@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 	/* Send File to Server */
 	//if(!fork())
 	//{
-		char* fs_name = "/home/anmol/Downloads/tcpclient.c";
+		char* fs_name = "/home/ram/alienation_1.pdf";
 		char sdbuf[LENGTH]; 
 		printf("[Client] Sending %s to the Server... ", fs_name);
 		FILE *fs = fopen(fs_name, "r");

@@ -81,8 +81,8 @@ int main ()
 			printf("[Server] Server has got connected from %s.\n", inet_ntoa(addr_remote.sin_addr));
 
 		/*Receive File from Client */
-		//char* fr_name = "/home/aryan/Desktop/receive.txt";
-		char* fr_name = "/home/anmol/Downloads/receive.txt";
+		//char* fr_name = "/home/aryan/Desktop/receive.pdf";
+		char* fr_name = "/home/ram/receive.pdf";
 		
 		FILE *fr = fopen(fr_name, "a");
 		if(fr == NULL)
