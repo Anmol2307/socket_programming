@@ -1,6 +1,6 @@
 #include "nodeData.h"
 
-void nodeData::setNode(char * ip, cint port, char * foldPath){
+void nodeData::setNode(char * ip, int port, char * foldPath){
 	ipAddress = ip;
 	portNo = port;
 	folderPath = foldPath;

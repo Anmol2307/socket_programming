@@ -1,11 +1,12 @@
-#include<cstdio>
-#include<iostream>
-#include<string>
-#include<cstdlib>
-#include<fstream>
-#include<vector>
+#include <cstdio>
+#include <iostream>
+#include <string>
+#include <cstdlib>
+#include <fstream>
+#include <vector>
 #include "node.h"
 #include "nodeData.h"
+#include <pthread.h>
 using namespace std;
 
 
@@ -32,11 +33,22 @@ void readNodeData(string filePath){
   	return;
 }
 
+void * startNode(void *threadid){
+	cout<<"thread no "<<(*(int *)threadid)<<endl;
+	//node newNode(*(int *)threadid);
+}
+
 void initialiazeNodes(){
+	pthread_t * threads = new pthread_t[N];
+	int rc;
 	for(int i = 0 ; i<N; i++){
-		node newNode(cloudNodesData[i], i);
-		cloudNodes.push_back(newNode);
+		rc = pthread_create(&threads[i],NULL,startNode,(void *)&i);
 	}
+	return;
+}
+
+void setStaticVariables(){
+	node newNode(N , cloudNodesData);
 	return;
 }
 
@@ -48,10 +60,7 @@ int main(){
 	string configFile;
 	cin>>configFile;
 	readNodeData(configFile);
-	vector<nodeData> node::cloudNodesData = cloudNodesData;
-	int node::N = N;
-
+	setStaticVariables();
 	initialiazeNodes();
-
 	return 0;
 }
