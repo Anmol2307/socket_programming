@@ -25,7 +25,7 @@ int node::bigModulo(string str, int N){
 
 node::node(int i){
 	cout<<i<<endl;
-	exit(0);
+	//exit(0);
 
 	id = i;
 	nodeData nData = cloudNodesData[i];
@@ -46,7 +46,7 @@ node::node(int i){
 
 	//bind the socket with the port and ip
 	if (bind(mySocket, (struct sockaddr *)&myAddr, sizeof(myAddr)) == -1) {
-		printf("Could not bind socket. Exiting!!\n");
+		printf("Could not bind socket %d. Exiting!!\n", id);
 		exit(0);
 	} 
 
@@ -68,8 +68,9 @@ node::node(int i){
 		recvlen = recvfrom(mySocket, receivedData, 2048, 0, (struct sockaddr *)&remoteAddr, &remoteLen);
 		if(recvlen > 0){
 			receivedData[recvlen] = 0;
-			//request received is of type ipaddr:port requestType(store/get) mf(c-string)
-			sscanf(receivedData, "%s:%d %s %s", ip, &port, reqType, mf);
+			//request received is of type ipaddr port requestType(store/get) mf(c-string)
+			sscanf(receivedData, "%s %d %s %s", ip, &port, reqType, mf);
+			cout<<"Request Received: "<<receivedData<<endl;
 			//check if this request belongs to this server
 			if(bigModulo(mf,N) == id){
 				//start a tcp connection and process the request depending upon its type i,e store or get
@@ -83,7 +84,8 @@ node::node(int i){
 				remoteAddr.sin_family = AF_INET;
 				remoteAddr.sin_addr.s_addr = inet_addr(cloudNodesData[bigModulo(mf,N)].ipAddress.c_str());
 				remoteAddr.sin_port = htons(cloudNodesData[bigModulo(mf,N)].portNo);
-
+				cout<<"Request Received: "<<receivedData<<endl;
+				cout<<"FORWARDING TO CORRECT NODE"<<endl;
 				if (sendto(mySocket, receivedData, strlen(receivedData), 0, (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) < 0){
 					perror("Could not forward request!! Exiting!\n");
 					exit(0);
