@@ -165,26 +165,27 @@ node::node(int i){
 						string path = nData.folderPath.append("/");
 						string finalPath = path.append(mf);
 						char* fr_name = (char *)finalPath.c_str();
-						char send_file[LENGTH];
-						FILE *fileOpen = fopen(send_file, "r");
+						printf("%s\n", finalPath.c_str());
+						char send_buffer[LENGTH];
+						FILE *fileOpen = fopen(fr_name, "r");
 						if(fileOpen == NULL)
 						{
-							printf("ERROR: File %s not found.\n", send_file);
+							printf("ERROR: File %s not found.\n", fr_name);
 							exit(0);
 						}
 
-						bzero(send_file, LENGTH); 
+						bzero(send_buffer, LENGTH); 
 						int block_size; 
-						while((block_size = fread(send_file, sizeof(char), LENGTH, fileOpen)) > 0)
+						while((block_size = fread(send_buffer, sizeof(char), LENGTH, fileOpen)) > 0)
 						{
-							if(send(sockfd, send_file, block_size, 0) < 0)
+							if(send(sockfd, send_buffer, block_size, 0) < 0)
 							{
-								fprintf(stderr, "ERROR: Failed to send file %s. (errno = %d)\n", send_file, errno);
+								fprintf(stderr, "ERROR: Failed to send file %s. (errno = %d)\n", fr_name, errno);
 								break;
 							}
-							bzero(send_file, LENGTH);
+							bzero(send_buffer, LENGTH);
 						}
-						printf("Ok File %s from Server was Sent!\n", send_file);
+						printf("Ok File %s from Server was Sent!\n", fr_name);
 						
 						close(sockfd);
 						printf("[Server] Connection with Client closed. Server will wait now...\n");
