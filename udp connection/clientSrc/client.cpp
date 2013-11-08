@@ -17,9 +17,11 @@ using namespace std;
 int reqType;
 int contactedNode;
 string configFile;
-int backlog = 1; // TODO : check?
+int backlog = 5; // TODO : check?
 string myIp = "127.0.0.1";
 int myPort = 27381;
+int myTCPPort = 27382;
+int tcpSockfd;
 int N;
 int mySocket;
 char request[200];
@@ -65,29 +67,39 @@ void setup(){
 	} 
 }
 
-int setup_TCP(){
+void setup_TCP(){
 
   //set the sockAddr object for own address.
   struct sockaddr_in myAddr;
-  myAddr.sin_family = AF_INET;
-  myAddr.sin_addr.s_addr = INADDR_ANY;
-  myAddr.sin_port = htons(myPort); // TODO will same port be used??
   memset((char *)&myAddr, 0, sizeof(myAddr)); // TODO : is this right?
+  myAddr.sin_family = AF_INET;
+  myAddr.sin_addr.s_addr = inet_addr(myIp.c_str());
+  myAddr.sin_port = htons(myTCPPort); // TODO will same port be used??
+  
 
 
-  int sockfd;
+  //int sockfd;
   //create a socket
-  if ((sockfd=socket(PF_INET, SOCK_STREAM, 0)) == -1){
+  if ((tcpSockfd=socket(AF_INET, SOCK_STREAM, 0)) == -1){
     printf("Could not create TCP socket. Exiting!!\n");
     exit(0);
   } 
 
   //bind the socket with the port and ip
-  if (bind(sockfd, (struct sockaddr *)&myAddr, sizeof(struct sockaddr)) == -1) {
+  if (bind(tcpSockfd, (struct sockaddr *)&myAddr, sizeof(struct sockaddr)) == -1) {
     printf("Could not bind TCP socket. Exiting!!\n");
     exit(0);
   } 
-  return sockfd;
+
+  if (listen(tcpSockfd, backlog) == -1 ) {
+    perror("Could not establish listen!! Exiting!\n");
+    exit(0);
+  }
+  else {
+    printf("Listen stage successful.\n");
+  }
+  cout<<"THE TCP SOCKET CREATED IS "<<tcpSockfd<<endl;
+  //return sockfd;
 }
 
 string getMd5sum(string filePath){
@@ -123,34 +135,26 @@ void sendRequest(){
 	remoteAddr.sin_addr.s_addr = inet_addr(cloudNodesData[contactedNode].ipAddress.c_str());
 	remoteAddr.sin_port = htons(cloudNodesData[contactedNode].portNo);
 
-	//cout<<cloudNodesData[contactedNode].ipAddress<<" AND "<<cloudNodesData[contactedNode].portNo<<" AND "<<contactedNode<<endl;
-	//exit(0);
 	if (sendto(mySocket, request, strlen(request), 0, (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) < 0){
 		perror("Could not forward request!! Exiting!\n");
 		exit(0);
 	}
 	else{
-    int sockfd = setup_TCP();
-    if (listen(sockfd, backlog) == -1 ) {
-      perror("Could not establish listen!! Exiting!\n");
-      exit(0);
-    }
-    else {
-      printf("Listen stage successful.\n");
-    }
+    
     int sin_size = sizeof(struct sockaddr_in);
     struct sockaddr_in nodeAddr;
     int new_fd ;
-    if( (new_fd = accept(sockfd, (struct sockaddr *)&nodeAddr, (socklen_t *)sizeof(struct sockaddr_in))) == -1 ){
+
+    cout<<"Waiting for Connection Established!!"<<endl;
+    while( (new_fd = accept(tcpSockfd, (struct sockaddr *)&nodeAddr, (socklen_t *)sizeof(struct sockaddr_in))) == -1 ){
       perror("Error in accept!! Exiting!\n");
       exit(0);     
     }
-    else {
-      printf("Accept stage successful.\n");
-    }
     
-    char* msg = "hello!";
-    if (send(new_fd, msg, strlen(msg), 0) == -1){
+    cout<<"Connection Established!!"<<endl;
+    
+    char msg[100] = "hello!";
+    if(send(new_fd, msg, strlen(msg), 0) == -1){
        perror("Could not send msg!! Exiting!\n");
       exit(0);
     }
@@ -190,12 +194,13 @@ int main(){
 	cout<<"Which node do you want to send the request to. Select between 0 and "<<N<<": ";	
 	cin>>contactedNode;
 	setup();
+  setup_TCP();
 	if(reqType == 1){
 		string storeFilePath;
 		//store request
 		cout<<"Enter the file path to be stored: ";
 		cin>>storeFilePath;
-		sprintf(request, "%s %d %s %s", myIp.c_str(), myPort,"store", getMd5sum(storeFilePath).c_str());
+		sprintf(request, "%s %d %s %s", myIp.c_str(), myTCPPort,"store", getMd5sum(storeFilePath).c_str());
     // printf("%s", getMd5sum(storeFilePath).c_str());
 		sendRequest();
 	}
@@ -203,7 +208,7 @@ int main(){
 		string md5;
 		cout<<"Enter the md5 sum of the file you want to retrieve: ";
 		cin>>md5;
-		sprintf(request, "%s %d %s %s", myIp.c_str(), myPort,"get", md5.c_str());
+		sprintf(request, "%s %d %s %s", myIp.c_str(), myTCPPort,"get", md5.c_str());
 		sendRequest();
 	}
 }

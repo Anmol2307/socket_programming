@@ -82,25 +82,30 @@ node::node(int i){
 					int sockfd; 
 					struct sockaddr_in remoteClient_addr; // will hold the destination addr 
 					sockfd = socket(PF_INET, SOCK_STREAM, 0); 
-					remoteClient_addr.sin_family = AF_INET; // host byte order 
-					port = 27381;
+					
+					//port = 27381;
+					// cout<<"IP of client is "<<ip<<" and port is "<<port<<endl;
+					// exit(0);
 
-// string ip1 = "127.0.0.1";
+					remoteClient_addr.sin_family = AF_INET; // host byte order 
 					remoteClient_addr.sin_port = htons(port); // network byte order 
 					remoteClient_addr.sin_addr.s_addr = inet_addr(ip); 
 					memset(&(remoteClient_addr.sin_zero), '\0', 8); // zero the rest of the struct 
 					// printf ("HERE %s, %d \n", ip, port);
 					// TODO : bind???
 
+					// cout<<"IP of client is "<<ip<<" and port is "<<port<<endl;
+					// exit(0);
+
 
 					if (connect(sockfd, (struct sockaddr *)&remoteClient_addr, sizeof(struct sockaddr)) == -1){
-						printf("Could not connect to client. Exiting!!\n");
-						exit(0);
+						printf("Could not connect to clientYO. Exiting!!\n");
+						//exit(0);
 					} 	
 					else {
 						printf("Connect stage successful.\n");
 					}
-					char * msg = "hi!";
+					//char * msg = "hi!";
 
 
 					char * recvBuffer = new char[2048];
