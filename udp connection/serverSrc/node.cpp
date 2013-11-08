@@ -78,8 +78,8 @@ node::node(int i){
 				cout<<"Start TCP conn"<<endl;
 				// #define DEST_IP "10.2.44.57" 
 				// #define DEST_PORT 5000 
-				if (strcmp(reqType,  "store") == 0){
-					int sockfd; 
+				
+				int sockfd; 
 					struct sockaddr_in remoteClient_addr; // will hold the destination addr 
 					sockfd = socket(PF_INET, SOCK_STREAM, 0); 
 					
@@ -99,87 +99,96 @@ node::node(int i){
 
 
 					if (connect(sockfd, (struct sockaddr *)&remoteClient_addr, sizeof(struct sockaddr)) == -1){
-						printf("Could not connect to clientYO. Exiting!!\n");
+						printf("Could not connect to client. Exiting!!\n");
 						//exit(0);
 					} 	
 					else {
 						printf("Connect stage successful.\n");
 					}
 					//char * msg = "hi!";
+					if (strcmp(reqType,  "store") == 0){
+						int success = 0;
+						while(success == 0)
+						{
 
-					int success = 0;
-					while(success == 0)
-					{
-						//sin_size = sizeof(struct sockaddr_in);
+							/*Receive File from Client */
+							string path = nData.folderPath.append("/");
+							string finalPath = path.append(mf);
+							char* fr_name = (char *)finalPath.c_str();
+							char receive_file[LENGTH];
+							FILE *fr = fopen(fr_name, "a");
+							if(fr == NULL)
+								printf("File %s Cannot be opened file on server.\n", fr_name);
+							else
+							{
+								bzero(receive_file, LENGTH); 
+								int fr_block_sz = 0;
+								while((fr_block_sz = recv(sockfd, receive_file, LENGTH, 0)) > 0) 
+								{
+									int write_sz = fwrite(receive_file, sizeof(char), fr_block_sz, fr);
+									if(write_sz < fr_block_sz)
+									{
+										perror("File write failed on server.\n");
+										exit(0);
+									}
+									bzero(receive_file, LENGTH);
+									if (fr_block_sz == 0 || fr_block_sz != 512) 
+									{
+										break;
+									}
+								}
+								if(fr_block_sz < 0)
+								{
+									if (errno == EAGAIN)
+									{
+										printf("recv() timed out.\n");
+									}
+									else
+									{
+										fprintf(stderr, "recv() failed due to errno = %d\n", errno);
+										exit(1);
+									}
+								}
+								printf("Ok received from client!\n");
+								fclose(fr); 
+							}
+							success =1;
+							close(sockfd);
+							printf("[Server] Connection with Client closed. Server will wait now...\n");
+						}
 
-		/* Wait a connection, and obtain a new socket file despriptor for single connection */
-
-		/*Receive File from Client */
-		//char* fr_name = "/home/aryan/Desktop/receive.pdf";
-
+						
+					}
+					else if (strcmp(reqType,  "get") == 0){
+						
+							/*Receive File from Client */
 						string path = nData.folderPath.append("/");
 						string finalPath = path.append(mf);
 						char* fr_name = (char *)finalPath.c_str();
-						char receive_file[LENGTH];
-						FILE *fr = fopen(fr_name, "a");
-						if(fr == NULL)
-							printf("File %s Cannot be opened file on server.\n", fr_name);
-						else
+						char send_file[LENGTH];
+						FILE *fileOpen = fopen(send_file, "r");
+						if(fileOpen == NULL)
 						{
-							bzero(receive_file, LENGTH); 
-							int fr_block_sz = 0;
-							while((fr_block_sz = recv(sockfd, receive_file, LENGTH, 0)) > 0) 
-							{
-								int write_sz = fwrite(receive_file, sizeof(char), fr_block_sz, fr);
-								if(write_sz < fr_block_sz)
-								{
-									perror("File write failed on server.\n");
-									exit(0);
-								}
-								bzero(receive_file, LENGTH);
-								if (fr_block_sz == 0 || fr_block_sz != 512) 
-								{
-									break;
-								}
-							}
-							if(fr_block_sz < 0)
-							{
-								if (errno == EAGAIN)
-								{
-									printf("recv() timed out.\n");
-								}
-								else
-								{
-									fprintf(stderr, "recv() failed due to errno = %d\n", errno);
-									exit(1);
-								}
-							}
-							printf("Ok received from client!\n");
-							fclose(fr); 
+							printf("ERROR: File %s not found.\n", send_file);
+							exit(0);
 						}
-						success =1;
+
+						bzero(send_file, LENGTH); 
+						int block_size; 
+						while((block_size = fread(send_file, sizeof(char), LENGTH, fileOpen)) > 0)
+						{
+							if(send(sockfd, send_file, block_size, 0) < 0)
+							{
+								fprintf(stderr, "ERROR: Failed to send file %s. (errno = %d)\n", send_file, errno);
+								break;
+							}
+							bzero(send_file, LENGTH);
+						}
+						printf("Ok File %s from Server was Sent!\n", send_file);
+						
 						close(sockfd);
-		    			printf("[Server] Connection with Client closed. Server will wait now...\n");
-					}
-
-						/*
-						char * recvBuffer = new char[2048];
-						int recvd = recv(sockfd, recvBuffer, 2048, 0);
-						if (recvd == -1){
-							perror("Could not receive msg!! Exiting!\n");
-							exit(0);
-						}
-						else if (recvd == 0){
-							printf("Remote size has closed connection on you!\n");
-							exit(0);
-						}
-						else {
-							printf("Receive stage successful. recvd value = %d, string=%s\n",recvd,recvBuffer);
-						}
-
-					} */
-				 /******* Don't forget error checking ********/ 
-			  // exit(0);
+						printf("[Server] Connection with Client closed. Server will wait now...\n");
+						
 					}
 				}
 				else{

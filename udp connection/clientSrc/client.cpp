@@ -142,7 +142,7 @@ void sendRequest(string storeFilePath){
 		exit(0);
 	}
 	else{
-    
+
     int sin_size = sizeof(struct sockaddr_in);
     struct sockaddr_in nodeAddr;
     int new_fd ;
@@ -170,72 +170,126 @@ void sendRequest(string storeFilePath){
     int block_size; 
     while((block_size = fread(file_buffer, sizeof(char), LENGTH, fileOpen)) > 0)
     {
-        if(send(new_fd, file_buffer, block_size, 0) < 0)
-        {
-            fprintf(stderr, "ERROR: Failed to send file %s. (errno = %d)\n", send_file, errno);
-            break;
-        }
-        bzero(file_buffer, LENGTH);
+      if(send(new_fd, file_buffer, block_size, 0) < 0)
+      {
+        fprintf(stderr, "ERROR: Failed to send file %s. (errno = %d)\n", send_file, errno);
+        break;
+      }
+      bzero(file_buffer, LENGTH);
     }
     printf("Ok File %s from Client was Sent!\n", send_file);
-
-/*    char msg[100] = "hello!";
-    if(send(new_fd, msg, strlen(msg), 0) == -1){
-       perror("Could not send msg!! Exiting!\n");
-      exit(0);
-    }
-    else {
-      printf("Send stage successful.\n");
-    }
-  */  
-
-    // char * recvBuffer = new char[2048];
-    // int recvd = recv(new_fd, recvBuffer, 2048, 0);
-    // if (recvd == -1){
-    //   perror("Could not receive msg!! Exiting!\n");
-    //   exit(0);
-    // }
-    // else if (recvd == 0){
-    //   printf("Remote size has closed connection on you!\n");
-    //   exit(0);
-    // }
-    // else {
-    //   printf("Receive stage successful. recvd value = %d\n",recvd);
-    // }
-
-    
-		// cout<<"Request Sent!!"<<endl;
+    close(tcpSockfd);
+    printf("[Client] Connection with Server closed. \n");
   }
 }
 
 
 
+void sendRetrieve(string retrieveFilemf){
+  struct sockaddr_in remoteAddr;
+  memset((char *)&remoteAddr, 0, sizeof(remoteAddr));
+  remoteAddr.sin_family = AF_INET;
+  remoteAddr.sin_addr.s_addr = inet_addr(cloudNodesData[contactedNode].ipAddress.c_str());
+  remoteAddr.sin_port = htons(cloudNodesData[contactedNode].portNo);
+
+  if (sendto(mySocket, request, strlen(request), 0, (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) < 0){
+    perror("Could not forward retrieve request!! Exiting!\n");
+    exit(0);
+  }
+  else{
+
+    int sin_size = sizeof(struct sockaddr_in);
+    struct sockaddr_in nodeAddr;
+    int new_fd ;
+
+    cout<<"Waiting for Connection Established!!"<<endl;
+    while( (new_fd = accept(tcpSockfd, (struct sockaddr *)&nodeAddr, (socklen_t *) &sin_size)) == -1 ){
+      perror("Error in accept!! Exiting!\n");
+      exit(0);     
+    }
+    
+    cout<<"Connection Established!!"<<endl;
+    
+    int success = 0;
+    while(success == 0)
+    {
+
+              /*Receive File from Client */
+      char* fr_name = (char *)retrieveFilemf.c_str();
+      char receive_file[LENGTH];
+      FILE *fr = fopen(fr_name, "w+");
+      if(fr == NULL)
+        printf("File %s Cannot be opened file on server.\n", fr_name);
+      else
+      {
+        bzero(receive_file, LENGTH); 
+        int fr_block_sz = 0;
+        while((fr_block_sz = recv(new_fd, receive_file, LENGTH, 0)) > 0) 
+        {
+          int write_sz = fwrite(receive_file, sizeof(char), fr_block_sz, fr);
+          if(write_sz < fr_block_sz)
+          {
+            perror("File write failed on client.\n");
+            exit(0);
+          }
+          bzero(receive_file, LENGTH);
+          if (fr_block_sz == 0 || fr_block_sz != 512) 
+          {
+            break;
+          }
+        }
+        if(fr_block_sz < 0)
+        {
+          if (errno == EAGAIN)
+          {
+            printf("recv() timed out.\n");
+          }
+          else
+          {
+            fprintf(stderr, "recv() failed due to errno = %d\n", errno);
+            exit(1);
+          }
+        }
+        printf("Ok received at client!\n");
+        fclose(fr); 
+      }
+      success =1;
+      close(new_fd);
+      printf("[Client] Connection with Server closed. \n");
+    }
+  }
+}
+
+
+
+
 int main(){
-	printf("Enter the number of nodes: ");
-	scanf("%d", &N);
-	cout<<"Enter the config file"<<endl;
-	cin>>configFile;
-	readNodeData(configFile);
-	cout<<"Enter 1 for store request and 2 for get request"<<endl;	
-	cin>>reqType;
-	cout<<"Which node do you want to send the request to. Select between 0 and "<<N<<": ";	
-	cin>>contactedNode;
-	setup();
-  setup_TCP();
-	if(reqType == 1){
-		string storeFilePath;
+ printf("Enter the number of nodes: ");
+ scanf("%d", &N);
+ cout<<"Enter the config file"<<endl;
+ cin>>configFile;
+ readNodeData(configFile);
+ cout<<"Enter 1 for store request and 2 for get request"<<endl;	
+ cin>>reqType;
+ cout<<"Which node do you want to send the request to. Select between 0 and "<<N<<": ";	
+ cin>>contactedNode;
+ setup();
+ setup_TCP();
+ if(reqType == 1){
+  string storeFilePath;
 		//store request
-		cout<<"Enter the file path to be stored: ";
-		cin>>storeFilePath;
-		sprintf(request, "%s %d %s %s", myIp.c_str(), myTCPPort,"store", getMd5sum(storeFilePath).c_str());
-    // printf("%s", getMd5sum(storeFilePath).c_str());
-		sendRequest(storeFilePath);
-	}
-	else{
-		string md5;
-		cout<<"Enter the md5 sum of the file you want to retrieve: ";
-		cin>>md5;
-		sprintf(request, "%s %d %s %s", myIp.c_str(), myTCPPort,"get", md5.c_str());
-		sendRequest(md5);
-	}
+  cout<<"Enter the file path to be stored: ";
+  cin>>storeFilePath;
+  sprintf(request, "%s %d %s %s", myIp.c_str(), myTCPPort,"store", getMd5sum(storeFilePath).c_str());
+  printf("Your md5 sum is: %s", getMd5sum(storeFilePath).c_str());
+		// TODO : store this in some file 
+  sendRequest(storeFilePath);
+}
+else{
+  string md5;
+  cout<<"Enter the md5 sum of the file you want to retrieve: ";
+  cin>>md5;
+  sprintf(request, "%s %d %s %s", myIp.c_str(), myTCPPort,"get", md5.c_str());
+  sendRetrieve(md5);
+}
 }
