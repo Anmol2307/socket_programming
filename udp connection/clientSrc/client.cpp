@@ -146,7 +146,7 @@ void sendRequest(){
     int new_fd ;
 
     cout<<"Waiting for Connection Established!!"<<endl;
-    while( (new_fd = accept(tcpSockfd, (struct sockaddr *)&nodeAddr, (socklen_t *)sizeof(struct sockaddr_in))) == -1 ){
+    while( (new_fd = accept(tcpSockfd, (struct sockaddr *)&nodeAddr, (socklen_t *) &sin_size)) == -1 ){
       perror("Error in accept!! Exiting!\n");
       exit(0);     
     }
