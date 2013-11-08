@@ -17,7 +17,7 @@ using namespace std;
 int reqType;
 int contactedNode;
 string configFile;
-
+int backlog = 1; // TODO : check?
 string myIp = "127.0.0.1";
 int myPort = 27381;
 int N;
@@ -28,19 +28,19 @@ vector<nodeData> cloudNodesData; //data for all the nodes of cloud
 
 void readNodeData(string filePath){
 	string line;
-  	ifstream myfile (filePath.c_str());
-  	for(int i = 0; i<N; i++){
-  		getline (myfile,line);
-  		nodeData newNode;
-  		char ip[30];
-  		int port;
-  		char foldPath[100];
-  		sscanf(line.c_str(), "%s %d %s", ip, &port, foldPath);
-  		newNode.setNode(ip, port, foldPath);
-  		cloudNodesData.push_back(newNode);
-  	}
-  	myfile.close();
-  	return;
+ ifstream myfile (filePath.c_str());
+ for(int i = 0; i<N; i++){
+  getline (myfile,line);
+  nodeData newNode;
+  char ip[30];
+  int port;
+  char foldPath[100];
+  sscanf(line.c_str(), "%s %d %s", ip, &port, foldPath);
+  newNode.setNode(ip, port, foldPath);
+  cloudNodesData.push_back(newNode);
+}
+myfile.close();
+return;
 }
 
 void setup(){
@@ -65,30 +65,55 @@ void setup(){
 	} 
 }
 
+int setup_TCP(){
+
+  //set the sockAddr object for own address.
+  struct sockaddr_in myAddr;
+  myAddr.sin_family = AF_INET;
+  myAddr.sin_addr.s_addr = INADDR_ANY;
+  myAddr.sin_port = htons(myPort); // TODO will same port be used??
+  memset((char *)&myAddr, 0, sizeof(myAddr)); // TODO : is this right?
+
+
+  int sockfd;
+  //create a socket
+  if ((sockfd=socket(PF_INET, SOCK_STREAM, 0)) == -1){
+    printf("Could not create TCP socket. Exiting!!\n");
+    exit(0);
+  } 
+
+  //bind the socket with the port and ip
+  if (bind(sockfd, (struct sockaddr *)&myAddr, sizeof(struct sockaddr)) == -1) {
+    printf("Could not bind TCP socket. Exiting!!\n");
+    exit(0);
+  } 
+  return sockfd;
+}
+
 string getMd5sum(string filePath){
 
 	unsigned char c[MD5_DIGEST_LENGTH];
     //char filename[]=filePath.c_str();
-    int i;
-    FILE *inFile = fopen (filePath.c_str(), "rb");
-    MD5_CTX mdContext;
-    int bytes;
-    unsigned char data[1024];
+  int i;
+  FILE *inFile = fopen (filePath.c_str(), "rb");
+  MD5_CTX mdContext;
+  int bytes;
+  unsigned char data[1024];
 
-    if (inFile == NULL) {
-        printf ("%s can't be opened.\n", filePath.c_str());
-        exit(0);
-    }
+  if (inFile == NULL) {
+    printf ("%s can't be opened.\n", filePath.c_str());
+    exit(0);
+  }
 
-    MD5_Init (&mdContext);
-    while ((bytes = fread (data, 1, 1024, inFile)) != 0)
-        MD5_Update (&mdContext, data, bytes);
-    MD5_Final (c,&mdContext);
-    char ch[5];
-    string s;
-    for(i = 0; i < MD5_DIGEST_LENGTH; i++) {sprintf(ch, "%02x", c[i]); s+=ch;}
+  MD5_Init (&mdContext);
+  while ((bytes = fread (data, 1, 1024, inFile)) != 0)
+    MD5_Update (&mdContext, data, bytes);
+  MD5_Final (c,&mdContext);
+  char ch[5];
+  string s;
+  for(i = 0; i < MD5_DIGEST_LENGTH; i++) {sprintf(ch, "%02x", c[i]); s+=ch;}
     fclose (inFile);
-    return 	s;
+  return 	s;
 }
 
 void sendRequest(){
@@ -105,8 +130,51 @@ void sendRequest(){
 		exit(0);
 	}
 	else{
-		cout<<"DATA SENT!!"<<endl;
-	}
+    int sockfd = setup_TCP();
+    if (listen(sockfd, backlog) == -1 ) {
+      perror("Could not establish listen!! Exiting!\n");
+      exit(0);
+    }
+    else {
+      printf("Listen stage successful.\n");
+    }
+    int sin_size = sizeof(struct sockaddr_in);
+    struct sockaddr_in nodeAddr;
+    int new_fd ;
+    if( (new_fd = accept(sockfd, (struct sockaddr *)&nodeAddr, (socklen_t *)sizeof(struct sockaddr_in))) == -1 ){
+      perror("Error in accept!! Exiting!\n");
+      exit(0);     
+    }
+    else {
+      printf("Accept stage successful.\n");
+    }
+    
+    char* msg = "hello!";
+    if (send(new_fd, msg, strlen(msg), 0) == -1){
+       perror("Could not send msg!! Exiting!\n");
+      exit(0);
+    }
+    else {
+      printf("Send stage successful.\n");
+    }
+   
+    // char * recvBuffer = new char[2048];
+    // int recvd = recv(new_fd, recvBuffer, 2048, 0);
+    // if (recvd == -1){
+    //   perror("Could not receive msg!! Exiting!\n");
+    //   exit(0);
+    // }
+    // else if (recvd == 0){
+    //   printf("Remote size has closed connection on you!\n");
+    //   exit(0);
+    // }
+    // else {
+    //   printf("Receive stage successful. recvd value = %d\n",recvd);
+    // }
+
+    
+		// cout<<"Request Sent!!"<<endl;
+  }
 }
 
 
@@ -128,6 +196,7 @@ int main(){
 		cout<<"Enter the file path to be stored: ";
 		cin>>storeFilePath;
 		sprintf(request, "%s %d %s %s", myIp.c_str(), myPort,"store", getMd5sum(storeFilePath).c_str());
+    // printf("%s", getMd5sum(storeFilePath).c_str());
 		sendRequest();
 	}
 	else{
