@@ -107,38 +107,94 @@ node::node(int i){
 					}
 					//char * msg = "hi!";
 
+					int success = 0;
+					while(success == 0)
+					{
+						//sin_size = sizeof(struct sockaddr_in);
 
-					char * recvBuffer = new char[2048];
-					int recvd = recv(sockfd, recvBuffer, 2048, 0);
-					if (recvd == -1){
-						perror("Could not receive msg!! Exiting!\n");
-						exit(0);
-					}
-					else if (recvd == 0){
-						printf("Remote size has closed connection on you!\n");
-						exit(0);
-					}
-					else {
-						printf("Receive stage successful. recvd value = %d, string=%s\n",recvd,recvBuffer);
+		/* Wait a connection, and obtain a new socket file despriptor for single connection */
+
+		/*Receive File from Client */
+		//char* fr_name = "/home/aryan/Desktop/receive.pdf";
+
+						string path = nData.folderPath.append("/");
+						string finalPath = path.append(mf);
+						char* fr_name = (char *)finalPath.c_str();
+						char receive_file[LENGTH];
+						FILE *fr = fopen(fr_name, "a");
+						if(fr == NULL)
+							printf("File %s Cannot be opened file on server.\n", fr_name);
+						else
+						{
+							bzero(receive_file, LENGTH); 
+							int fr_block_sz = 0;
+							while((fr_block_sz = recv(sockfd, receive_file, LENGTH, 0)) > 0) 
+							{
+								int write_sz = fwrite(receive_file, sizeof(char), fr_block_sz, fr);
+								if(write_sz < fr_block_sz)
+								{
+									perror("File write failed on server.\n");
+									exit(0);
+								}
+								bzero(receive_file, LENGTH);
+								if (fr_block_sz == 0 || fr_block_sz != 512) 
+								{
+									break;
+								}
+							}
+							if(fr_block_sz < 0)
+							{
+								if (errno == EAGAIN)
+								{
+									printf("recv() timed out.\n");
+								}
+								else
+								{
+									fprintf(stderr, "recv() failed due to errno = %d\n", errno);
+									exit(1);
+								}
+							}
+							printf("Ok received from client!\n");
+							fclose(fr); 
+						}
+						success =1;
+						close(sockfd);
+		    			printf("[Server] Connection with Client closed. Server will wait now...\n");
 					}
 
-				}
+						/*
+						char * recvBuffer = new char[2048];
+						int recvd = recv(sockfd, recvBuffer, 2048, 0);
+						if (recvd == -1){
+							perror("Could not receive msg!! Exiting!\n");
+							exit(0);
+						}
+						else if (recvd == 0){
+							printf("Remote size has closed connection on you!\n");
+							exit(0);
+						}
+						else {
+							printf("Receive stage successful. recvd value = %d, string=%s\n",recvd,recvBuffer);
+						}
+
+					} */
 				 /******* Don't forget error checking ********/ 
 			  // exit(0);
-			}
-			else{
-				//forward the packet to correct destination
-				memset((char *)&remoteAddr, 0, sizeof(remoteAddr));
-				remoteAddr.sin_family = AF_INET;
-				remoteAddr.sin_addr.s_addr = inet_addr(cloudNodesData[bigModulo(mf,N)].ipAddress.c_str());
-				remoteAddr.sin_port = htons(cloudNodesData[bigModulo(mf,N)].portNo);
-				cout<<"Request Received: "<<receivedData<<endl;
-				cout<<"FORWARDING TO CORRECT NODE"<<endl;
-				if (sendto(mySocket, receivedData, strlen(receivedData), 0, (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) < 0){
-					perror("Could not forward request!! Exiting!\n");
-					exit(0);
+					}
 				}
-			}
+				else{
+				//forward the packet to correct destination
+					memset((char *)&remoteAddr, 0, sizeof(remoteAddr));
+					remoteAddr.sin_family = AF_INET;
+					remoteAddr.sin_addr.s_addr = inet_addr(cloudNodesData[bigModulo(mf,N)].ipAddress.c_str());
+					remoteAddr.sin_port = htons(cloudNodesData[bigModulo(mf,N)].portNo);
+					cout<<"Request Received: "<<receivedData<<endl;
+					cout<<"FORWARDING TO CORRECT NODE"<<endl;
+					if (sendto(mySocket, receivedData, strlen(receivedData), 0, (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) < 0){
+						perror("Could not forward request!! Exiting!\n");
+						exit(0);
+					}
+				}
+			}	
 		}
 	}
-}

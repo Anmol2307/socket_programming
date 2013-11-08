@@ -12,6 +12,8 @@
 #include <sys/types.h>
 #include <openssl/md5.h>
 #include "nodeData.h"
+#include <errno.h>
+#define LENGTH 512 
 using namespace std;
 
 int reqType;
@@ -128,7 +130,7 @@ string getMd5sum(string filePath){
   return 	s;
 }
 
-void sendRequest(){
+void sendRequest(string storeFilePath){
 	struct sockaddr_in remoteAddr;
 	memset((char *)&remoteAddr, 0, sizeof(remoteAddr));
 	remoteAddr.sin_family = AF_INET;
@@ -153,7 +155,31 @@ void sendRequest(){
     
     cout<<"Connection Established!!"<<endl;
     
-    char msg[100] = "hello!";
+    //char* fs_name = "/home/anmol/lab09.pdf";
+    char* send_file = (char *)storeFilePath.c_str();
+    char file_buffer[LENGTH]; 
+    printf("[Client] Sending %s to the Server... ", send_file);
+    FILE *fileOpen = fopen(send_file, "r");
+    if(fileOpen == NULL)
+    {
+      printf("ERROR: File %s not found.\n", send_file);
+      exit(0);
+    }
+
+    bzero(file_buffer, LENGTH); 
+    int block_size; 
+    while((block_size = fread(file_buffer, sizeof(char), LENGTH, fileOpen)) > 0)
+    {
+        if(send(new_fd, file_buffer, block_size, 0) < 0)
+        {
+            fprintf(stderr, "ERROR: Failed to send file %s. (errno = %d)\n", send_file, errno);
+            break;
+        }
+        bzero(file_buffer, LENGTH);
+    }
+    printf("Ok File %s from Client was Sent!\n", send_file);
+
+/*    char msg[100] = "hello!";
     if(send(new_fd, msg, strlen(msg), 0) == -1){
        perror("Could not send msg!! Exiting!\n");
       exit(0);
@@ -161,7 +187,8 @@ void sendRequest(){
     else {
       printf("Send stage successful.\n");
     }
-   
+  */  
+
     // char * recvBuffer = new char[2048];
     // int recvd = recv(new_fd, recvBuffer, 2048, 0);
     // if (recvd == -1){
@@ -202,13 +229,13 @@ int main(){
 		cin>>storeFilePath;
 		sprintf(request, "%s %d %s %s", myIp.c_str(), myTCPPort,"store", getMd5sum(storeFilePath).c_str());
     // printf("%s", getMd5sum(storeFilePath).c_str());
-		sendRequest();
+		sendRequest(storeFilePath);
 	}
 	else{
 		string md5;
 		cout<<"Enter the md5 sum of the file you want to retrieve: ";
 		cin>>md5;
 		sprintf(request, "%s %d %s %s", myIp.c_str(), myTCPPort,"get", md5.c_str());
-		sendRequest();
+		sendRequest(md5);
 	}
 }

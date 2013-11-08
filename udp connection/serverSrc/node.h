@@ -11,6 +11,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
+#include <errno.h>
+#define LENGTH 512 
+
 using namespace std;
 
 class node{
