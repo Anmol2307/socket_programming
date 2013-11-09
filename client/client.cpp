@@ -14,6 +14,7 @@
 #include "nodeData.h"
 #include <errno.h>
 #include <unistd.h>
+#include <stdio.h>
 
 #define LENGTH 512 
 using namespace std;
@@ -44,10 +45,26 @@ bool readNodeData(string filePath){
     for(int i = 0; i<N; i++){
       getline (myfile,line);
       nodeData newNode;
-      char ip[30];
-      int port;
-      char foldPath[100];
-      sscanf(line.c_str(), "%s %d %s", ip, &port, foldPath);
+      char* ip;
+      int port ;
+      char* foldPath;
+      ip = strtok((char*)line.c_str(), ":");
+      if (ip == NULL){
+        printf("[ERROR] Wrong format in config file. Try Again!\n");
+        return false;
+      }
+      char* port1 =  strtok(NULL, " ");
+      if (port1 == NULL){
+        printf("[ERROR] Wrong format in config file. Try Again!\n");
+        return false;
+      }
+      sscanf(port1, "%d", &port);
+      foldPath = strtok(NULL, " ");
+      if (foldPath == NULL){
+        printf("[ERROR] Wrong format in config file. Try Again!\n");
+        return false;
+      }
+
       newNode.setNode(ip, port, foldPath);
       cloudNodesData.push_back(newNode);
     }
