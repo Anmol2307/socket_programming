@@ -52,13 +52,13 @@ node::node(){
   int mySocket;  // UDP socket to listen to incoming requests
 	//create a socket
   if ((mySocket=socket(AF_INET, SOCK_DGRAM, 0)) == -1){
-  	perror("[ERROR] Could not create socket. Exiting!!\n");
+  	printf("[ERROR] Could not create socket. Exiting!!\n");
   	exit(0);
   }	
 
 	//bind the socket with the port and ip
   if (bind(mySocket, (struct sockaddr *)&myAddr, sizeof(myAddr)) == -1) {
-  	perror("[ERROR] Could not bind socket %d. Exiting!!\n", id);
+  	printf("[ERROR] Could not bind socket %d. Exiting!!\n", id);
   	exit(0);
   } 
 
@@ -86,7 +86,7 @@ node::node(){
 
 			//Request received is of type ipaddr port requestType(store/get) mf(c-string)
   		sscanf(receivedData, "%s %d %s %s", ip, &port, requestType, mf);
-  		printf("[Server] Request Received from %s, %d of type %s! ",ip, port, requestType);
+  		printf("[Server] Request Received from %s, port %d of type %s! \n",ip, port, requestType);
 
 			//Check if this request belongs to this server
   		if(bigModulo(mf,N) == id){
@@ -96,7 +96,7 @@ node::node(){
   			int sockfd; 
 				struct sockaddr_in remoteClient_addr; // will hold the destination address 
 				if ((sockfd = socket(PF_INET, SOCK_STREAM, 0)) == -1){ // TCP connection
-					perror("[ERROR] Could not create TCP socket. Exiting!!\n");
+					printf("[ERROR] Could not create TCP socket. Exiting!!\n");
 				exit(0);
 				} 
 				remoteClient_addr.sin_family = AF_INET; // host byte order 
@@ -106,7 +106,7 @@ node::node(){
 
 				// Establish connection
 				if (connect(sockfd, (struct sockaddr *)&remoteClient_addr, sizeof(struct sockaddr)) == -1){
-					perror("[ERROR] Could not connect to client. Please check connections!!\n");
+					printf("[ERROR] Could not connect to client. Please check connections!!\n");
 					//exit(0);
 				} 	
 				else {
@@ -125,7 +125,7 @@ node::node(){
 						char receive_buffer[LENGTH];
 						FILE *fileOpen = fopen(write_file, "w+");
 						if(fileOpen == NULL){
-							perror("[ERROR] File %s Cannot open the file to write.\n", write_file);
+							printf("[ERROR] Cannot open the file %s to write.\n", write_file);
 							exit(0);							
 						}
 						else{
@@ -135,7 +135,7 @@ node::node(){
 							while((recv_block_size = recv(sockfd, receive_buffer, LENGTH, 0)) > 0) {
 								int write_sz = fwrite(receive_buffer, sizeof(char), recv_block_size, fileOpen);
 								if(write_sz < recv_block_size){
-									perror("[ERROR] File write failed on server.\n");
+									printf("[ERROR] File write failed on server.\n");
 									exit(0);
 								}
 								bzero(receive_buffer, LENGTH);
@@ -143,12 +143,12 @@ node::node(){
 							if(recv_block_size < 0){
 								if (errno == EAGAIN){
            				 // Timeout Error
-									perror("[ERROR] recv() timed out.\n");
+									printf("[ERROR] recv() timed out.\n");
 									exit(0);
 								}
 								else{
             			// Other errors
-									perror("[ERROR] recv() failed due to errno = %d\n", errno);
+									printf("[ERROR] recv() failed due to errno = %d\n", errno);
 									exit(0);
 								}
 							}
@@ -174,7 +174,7 @@ node::node(){
 					// Give error if file cannot be opened
 					if(fileOpen == NULL)
 					{
-						perror("ERROR: File %s not found.\n", write_file);
+						printf("ERROR: File %s not found.\n", write_file);
 						exit(0);
 					}
 
@@ -188,7 +188,7 @@ node::node(){
 					{
 						if(send(sockfd, send_buffer, block_size, 0) < 0)
 						{
-							perror( "[ERROR] Failed to send file %s. (errno = %d)\n", write_file, errno);
+							printf( "[ERROR] Failed to send file %s. (errno = %d)\n", write_file, errno);
 							flag = false;
 							break;
 						}
@@ -210,9 +210,9 @@ node::node(){
 				remoteAddr.sin_family = AF_INET;
 				remoteAddr.sin_addr.s_addr = inet_addr(cloudNodesData[bigModulo(mf,N)].ipAddress.c_str());
 				remoteAddr.sin_port = htons(cloudNodesData[bigModulo(mf,N)].portNo);
-				printf ("[Server] Forwarding request to correct node... ");
+				printf ("[Server] Forwarding request to correct node... \n");
 				if (sendto(mySocket, receivedData, strlen(receivedData), 0, (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) < 0){
-					perror("[Error] Could not forward request!! Exiting!\n");
+					printf("[Error] Could not forward request!! Exiting!\n");
 					exit(0);
 				}
 			}

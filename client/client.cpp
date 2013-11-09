@@ -13,6 +13,7 @@
 #include <openssl/md5.h>
 #include "nodeData.h"
 #include <errno.h>
+#include <unistd.h>
 
 #define LENGTH 512 
 using namespace std;
@@ -54,7 +55,7 @@ bool readNodeData(string filePath){
     return true;
   }
   else {
-    perror("[ERROR] Error opening config file. Try again!\n");
+    printf("[ERROR] Error opening config file. Try again!\n");
     return false;
   }
 }
@@ -76,13 +77,13 @@ void setup_UDP(){
 
 	//create a socket
   if ((udpSockfd=socket(AF_INET, SOCK_DGRAM, 0)) == -1){
-    perror("[ERROR] Could not create socket. Exiting!!\n");
+    printf("[ERROR] Could not create socket. Exiting!!\n");
     exit(0);
   }	
 
 	//bind the socket with the port and ip
   if (bind(udpSockfd, (struct sockaddr *)&myAddr, sizeof(myAddr)) == -1) {
-    perror("[ERROR] Could not bind socket. Exiting!!\n");
+    printf("[ERROR] Could not bind socket. Exiting!!\n");
     exit(0);
   } 
 
@@ -105,13 +106,13 @@ void setup_TCP(){
   
   //create a socket
   if ((tcpSockfd=socket(AF_INET, SOCK_STREAM, 0)) == -1){
-    perror("[ERROR] Could not create TCP socket. Exiting!!\n");
+    printf("[ERROR] Could not create TCP socket. Exiting!!\n");
     exit(0);
   } 
 
   //bind the socket with the port and ip
   if (bind(tcpSockfd, (struct sockaddr *)&myAddr, sizeof(struct sockaddr)) == -1) {
-    perror("[ERROR] Could not bind TCP socket. Exiting!!\n");
+    printf("[ERROR] Could not bind TCP socket. Exiting!!\n");
     exit(0);
   } 
 
@@ -119,7 +120,7 @@ void setup_TCP(){
 
   // start listening on the socket, and grant new sockets when a new connection is made
   if (listen(tcpSockfd, backlog) == -1 ) {
-    perror("[ERROR] Could not establish listen!! Exiting!\n");
+    printf("[ERROR] Could not establish listen!! Exiting!\n");
     exit(0);
   }
   else {
@@ -143,7 +144,7 @@ string getMd5sum(string filePath){
   unsigned char data[1024];
 
   if (inFile == NULL) {
-    perror ("[ERROR] %s can't be opened.\n", filePath.c_str());
+    printf ("[ERROR] %s can't be opened.\n", filePath.c_str());
     exit(0);
   }
 
@@ -173,7 +174,7 @@ void storeRequest(string storeFilePath){
 
   // sned the file store request to remote node
   if (sendto(udpSockfd, request, strlen(request), 0, (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) < 0){
-    perror("[ERROR] Could not forward request!! Exiting!\n");
+    printf("[ERROR] Could not forward request!! Exiting!\n");
     exit(0);
   }
   else{
@@ -186,7 +187,7 @@ void storeRequest(string storeFilePath){
 
 
     while( (new_fd = accept(tcpSockfd, (struct sockaddr *)&nodeAddr, (socklen_t *) &sin_size)) == -1 ){
-      perror("[ERROR] Error in accept!! Exiting!\n");
+      printf("[ERROR] Error in accept!! Exiting!\n");
       exit(0);     
     }
     
@@ -203,7 +204,7 @@ void storeRequest(string storeFilePath){
       printf("[ERROR] File %s not found.\n", send_file);
       exit(0);
     }
-    printf("[Client] Sending %s to the Server... ", send_file);
+    printf("[Client] Sending %s to the Server... \n", send_file);
     
     bzero(file_buffer, LENGTH); 
     int block_size; 
@@ -213,7 +214,7 @@ void storeRequest(string storeFilePath){
     {
       if(send(new_fd, file_buffer, block_size, 0) < 0)
       {
-        perror("[ERROR] Failed to send file %s. (errno = %d)\n", send_file, errno);
+        printf("[ERROR] Failed to send file %s. (errno = %d)\n", send_file, errno);
         flag = false;
         break;
       }
@@ -246,7 +247,7 @@ void getRequest(string retrieveFilemf){
 
   // sned the file get request to remote node
   if (sendto(udpSockfd, request, strlen(request), 0, (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) < 0){
-    perror("[ERROR] Could not forward request!! Exiting!\n");
+    printf("[ERROR] Could not forward request!! Exiting!\n");
     exit(0);
   }
   else{
@@ -257,7 +258,7 @@ void getRequest(string retrieveFilemf){
 
     printf("[Client] Waiting for Connection Establishment from Remote node!!\n");
     while( (new_fd = accept(tcpSockfd, (struct sockaddr *)&nodeAddr, (socklen_t *) &sin_size)) == -1 ){
-      perror("[ERROR] Error in accept!! Exiting!\n");
+      printf("[ERROR] Error in accept!! Exiting!\n");
       exit(0);     
     }
     
@@ -274,7 +275,7 @@ void getRequest(string retrieveFilemf){
       char receive_buffer[LENGTH];
       FILE *fileOpen = fopen(write_file, "w+");
       if(fileOpen == NULL){
-        perror("[ERROR] File %s Cannot open the file to write.\n", write_file);
+        printf("[ERROR] Cannot open the file %s to write.\n", write_file);
         exit(0);        
       }
       else{
@@ -284,7 +285,7 @@ void getRequest(string retrieveFilemf){
         while((recv_block_size = recv(new_fd, receive_buffer, LENGTH, 0)) > 0) {
           int write_sz = fwrite(receive_buffer, sizeof(char), recv_block_size, fileOpen);
           if(write_sz < recv_block_size){
-            perror("[ERROR] File write failed on client.\n");
+            printf("[ERROR] File write failed on client.\n");
             exit(0);
           }
           bzero(receive_buffer, LENGTH);
@@ -296,12 +297,12 @@ void getRequest(string retrieveFilemf){
         if(recv_block_size < 0){
           if (errno == EAGAIN){
             // Timeout Error
-            perror("[ERROR] recv() timed out.\n");
+            printf("[ERROR] recv() timed out.\n");
             exit(0);
           }
           else{
             // Other errors
-            perror("[ERROR] recv() failed due to errno = %d\n", errno);
+            printf("[ERROR] recv() failed due to errno = %d\n", errno);
             exit(0);
           }
         }
@@ -338,7 +339,7 @@ int main(){
   setup_TCP();
 
   while (1){
-    printf("Select action to perform:\n 1 - Store a File\n 2 - Retrieve a file\n 0 - Quit\n");
+    printf("\nSelect action to perform:\n 1 - Store a File\n 2 - Retrieve a file\n 0 - Quit\n");
     printf("Enter your choice: ")	;
     cin>>requestType;
     if (requestType == 0){
@@ -358,7 +359,7 @@ int main(){
 
       // Make a request accordingly, to be sent to server
       sprintf(request, "%s %d %s %s", myIp.c_str(), myTCPPort,"store", getMd5sum(storeFilePath).c_str());
-      printf("Your md5 sum is: %s", getMd5sum(storeFilePath).c_str()); 
+      printf("Your md5 sum is: %s\n", getMd5sum(storeFilePath).c_str()); 
       storeRequest(storeFilePath);
     }
     // Handle retrieve request

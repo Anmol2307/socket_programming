@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <errno.h>
+#include <unistd.h>
 #define LENGTH 512 
 
 using namespace std;
