@@ -139,7 +139,7 @@ void setup_TCP(){
   struct sockaddr_in temp;
   int addrlen = sizeof(temp);
   getsockname(tcpSockfd, (struct sockaddr *)&temp, (socklen_t *) &addrlen);
-  int myTCPPort = ntohs(temp.sin_port);
+  myTCPPort = ntohs(temp.sin_port);
 
   printf("[Client] Socket created successfully.\n");
 
@@ -224,6 +224,7 @@ void storeRequest(string storeFilePath){
     FILE *fileOpen = fopen(send_file, "r");
 
     // Give error if file cannot be opened
+
     if(fileOpen == NULL)
     {
       printf("[ERROR] File %s not found.\n", send_file);
@@ -296,7 +297,7 @@ void getRequest(string retrieveFilemf){
     while(success == 0)
     {
       // Start receiving file, continue recieving till success is 1
-      char* write_file = (char *)retrieveFilemf.c_str();
+      char* write_file = (char *)("received/"+retrieveFilemf).c_str();
       char receive_buffer[LENGTH];
       FILE *fileOpen = fopen(write_file, "w+");
       if(fileOpen == NULL){
@@ -306,8 +307,12 @@ void getRequest(string retrieveFilemf){
       else{
         bzero(receive_buffer, LENGTH); 
         int recv_block_size = 0;
+        bool flag = false;
+        long long int receivedBytes;
+
         // Try writing to file whenever a new packet is recieved
         while((recv_block_size = recv(new_fd, receive_buffer, LENGTH, 0)) > 0) {
+          receivedBytes += recv_block_size;
           int write_sz = fwrite(receive_buffer, sizeof(char), recv_block_size, fileOpen);
           if(write_sz < recv_block_size){
             printf("[ERROR] File write failed on client.\n");
@@ -332,7 +337,7 @@ void getRequest(string retrieveFilemf){
           }
         }
         // File received successfully
-        printf("[Client] File received at client!\n");
+        printf("[Client] File received at client! Total bytes received = %lld\n", receivedBytes);
         fclose(fileOpen); 
       }
       success = 1;
@@ -355,6 +360,9 @@ int main(){
     getline(myfile, line);
     sscanf(line.c_str(), "%d\n", &N);
     getline(myfile, configFile);
+    if(!readNodeData(configFile)){
+      exit(0);
+    }
     getline(myfile, myIp);
     myfile.close();
   }

@@ -91,16 +91,14 @@ node::node(){
 			//Check if this request belongs to this server
   		if(bigModulo(mf,N) == id){
 
-				// Process a store request
-        if (strcmp(requestType,  "store") == 0){
-          //start a tcp connection and process the request depending upon its type i,e store or get
-          printf("[Server] Establishing TCP connection with client...\n");
+        //start a tcp connection and process the request depending upon its type i,e store or get
+        printf("[Server] Establishing TCP connection with client...\n");
 
-          int sockfd; 
+        int sockfd; 
         struct sockaddr_in remoteClient_addr; // will hold the destination address 
         if ((sockfd = socket(PF_INET, SOCK_STREAM, 0)) == -1){ // TCP connection
           printf("[ERROR] Could not create TCP socket. Exiting!!\n");
-          exit(0);
+          continue;
         } 
         remoteClient_addr.sin_family = AF_INET; // host byte order 
         remoteClient_addr.sin_port = htons(port); // network byte order 
@@ -116,6 +114,8 @@ node::node(){
           printf("[Server] Connected successfully!\n");
         }
 
+				// Process a store request
+        if (strcmp(requestType,  "store") == 0){
 
         int success = 0;
         while(success == 0)
@@ -176,33 +176,21 @@ node::node(){
 					// Give error if file cannot be opened
        if(fileOpen == NULL)
        {
-        printf("ERROR: File %s not found.\n", write_file);
-        // exit(0);
+        printf("[ERROR] File %s not found.\n", write_file);
+        bzero(send_buffer, LENGTH);
+        int block_size; 
+
+        if(send(sockfd, send_buffer, 512, 0) < 0)
+        {
+          printf( "[ERROR] Failed to send empty file %s. (errno = %d)\n", write_file, errno);
+        }
+        else{
+          printf( "[Server] Empty file sent.\n");
+        }
+
        }
        else {
-        //start a tcp connection and process the request depending upon its type i,e store or get
-        printf("[Server] Establishing TCP connection with client...\n");
-
-        int sockfd; 
-        struct sockaddr_in remoteClient_addr; // will hold the destination address 
-        if ((sockfd = socket(PF_INET, SOCK_STREAM, 0)) == -1){ // TCP connection
-          printf("[ERROR] Could not create TCP socket. Exiting!!\n");
-          exit(0);
-        } 
-        remoteClient_addr.sin_family = AF_INET; // host byte order 
-        remoteClient_addr.sin_port = htons(port); // network byte order 
-        remoteClient_addr.sin_addr.s_addr = inet_addr(ip); // Destination IP address
-        memset(&(remoteClient_addr.sin_zero), '\0', 8); // zero the rest of the struct 
-
-        // Establish connection
-        if (connect(sockfd, (struct sockaddr *)&remoteClient_addr, sizeof(struct sockaddr)) == -1){
-          printf("[ERROR] Could not connect to client. Please check connections!!\n");
-          //exit(0);
-        }   
-        else {
-          printf("[Server] Connected successfully!\n");
-        }
-        printf("[Server] Sending %s to the Client... ", write_file);
+        printf("[Server] Sending %s to the Client... \n", write_file);
         bzero(send_buffer, LENGTH); 
         int block_size; 
         int flag = true;
