@@ -149,7 +149,7 @@ void setup_TCP(){
     exit(0);
   }
   else {
-    printf("[Client] Listening to TCP socket on IP = %s and Port = %d", myIp.c_str(), myTCPPort);
+    printf("[Client] Listening to TCP socket on IP = %s and Port = %d\n", myIp.c_str(), myTCPPort);
   }
 }
 
@@ -169,8 +169,8 @@ string getMd5sum(string filePath){
   unsigned char data[1024];
 
   if (inFile == NULL) {
-    printf ("[ERROR] %s can't be opened.\n", filePath.c_str());
-    exit(0);
+    printf ("[ERROR] %s can't be opened. Try Again.\n", filePath.c_str());
+    return "";
   }
 
   MD5_Init (&mdContext);
@@ -199,7 +199,7 @@ void storeRequest(string storeFilePath){
 
   // sned the file store request to remote node
   if (sendto(udpSockfd, request, strlen(request), 0, (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) < 0){
-    printf("[ERROR] Could not forward request!! Exiting!\n");
+    printf("[ERROR] Could not send request. Check connections. Exiting!\n");
     exit(0);
   }
   else{
@@ -273,7 +273,7 @@ void getRequest(string retrieveFilemf){
 
   // sned the file get request to remote node
   if (sendto(udpSockfd, request, strlen(request), 0, (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) < 0){
-    printf("[ERROR] Could not forward request!! Exiting!\n");
+    printf("[ERROR] Could not send request. Check connections. Exiting!\n");
     exit(0);
   }
   else{
@@ -308,7 +308,7 @@ void getRequest(string retrieveFilemf){
         bzero(receive_buffer, LENGTH); 
         int recv_block_size = 0;
         bool flag = false;
-        long long int receivedBytes;
+        long long int receivedBytes = 0;
 
         // Try writing to file whenever a new packet is recieved
         while((recv_block_size = recv(new_fd, receive_buffer, LENGTH, 0)) > 0) {
@@ -338,6 +338,9 @@ void getRequest(string retrieveFilemf){
         }
         // File received successfully
         printf("[Client] File received at client! Total bytes received = %lld\n", receivedBytes);
+        if (receivedBytes == 0) {
+          printf("[ERROR] Empty file received. Check your md5 sum.\n");
+        }
         fclose(fileOpen); 
       }
       success = 1;
@@ -394,9 +397,13 @@ int main(){
       string storeFilePath;
       printf("Enter the file path to be stored: ");
       cin>>storeFilePath;
-
+      string md5sum = getMd5sum(storeFilePath);
+      // if file could not be opened, try again
+      if (md5sum == ""){
+        continue;
+      }
       // Make a request accordingly, to be sent to server
-      sprintf(request, "%s %d %s %s", myIp.c_str(), myTCPPort,"store", getMd5sum(storeFilePath).c_str());
+      sprintf(request, "%s %d %s %s", myIp.c_str(), myTCPPort,"store", md5sum.c_str());
       printf("Your md5 sum is: %s\n", getMd5sum(storeFilePath).c_str()); 
       storeRequest(storeFilePath);
     }
