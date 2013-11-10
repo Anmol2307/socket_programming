@@ -22,7 +22,7 @@ if [ "$1" == "client" ] ; then
     echo "Running client on port number "$3
     printf "$numNodes\n$2\n$myIP" > bin/inputClient
 
-    xterm -e "bash -c \"./bin/client; exec bash\""
+    gnome-terminal -t Client -e "bash -c \"./bin/client; exec bash\""
 
 
 fi
@@ -54,8 +54,7 @@ if [ "$1" == "server" ] ; then
         	mkdir -p "$folder"
         	echo "Running a server on port number "$port
         	printf "$numNodes\n$nodeID\n$2" > bin/input$nodeID
-        	# gnome-terminal -e "./bin/run.sh"
-             xterm  -e "bash -c \"./bin/server < bin/input$nodeID; exec bash\""
+            gnome-terminal -t "Node "$nodeID -e "bash -c \"./bin/server < bin/input$nodeID; exec bash\""
         fi
         nodeID=$(($nodeID + 1))
     done < "$2"

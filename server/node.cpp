@@ -139,6 +139,7 @@ node::node(){
               bzero(receive_buffer, LENGTH); 
               int recv_block_size = 0;
 							// Try writing to file whenever a new packet is recieved
+              printf("[Server] Receiving file from client.\n");
               while((recv_block_size = recv(sockfd, receive_buffer, LENGTH, 0)) > 0) {
                 int write_sz = fwrite(receive_buffer, sizeof(char), recv_block_size, fileOpen);
                 if(write_sz < recv_block_size){

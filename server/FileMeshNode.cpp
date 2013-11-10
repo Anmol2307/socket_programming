@@ -75,17 +75,11 @@ void setStaticVariables(){
  * To  Handle interaction between program and user
  */
 int main(){
-	//printf("Enter the number of nodes: ");
 	scanf("%d", &N);
-	//printf("Enter the node id: ");
 	scanf("%d", &nodeId);
-	//cout<<"Node id is "<<nodeId<<endl;
-	//printf("Enter the configuration file path: ");
 	string configFile;
 	scanf("\n");
 	getline(cin,configFile);
-	//cout<<"config file is "<<configFile<<endl;
-	//exit(0);
 	while ( !readNodeData(configFile) ) {
     printf("Enter new location of config file: ");
     cin >> configFile;
