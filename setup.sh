@@ -53,7 +53,7 @@ if [ "$1" == "server" ] ; then
         	echo "Running a server on port number "$port
         	printf "$numNodes\n$nodeID\n$2" > bin/input$nodeID
         	# gnome-terminal -e "./bin/run.sh"
-            gnome-terminal -e "bash -c \"./bin/server < bin/input$nodeID; exec bash\""
+             gnome-terminal -e "bash -c \"./bin/server < bin/input$nodeID; exec bash\""
         fi
         nodeID=$(($nodeID + 1))
     done < "$2"
