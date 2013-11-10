@@ -1,3 +1,7 @@
+/*
+ * Main File
+ * To Handle interaction between program and user
+ */
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -59,27 +63,7 @@ bool readNodeData(string filePath){
     return false;
   }
 }
-// void * startNode(void *threadid){
-// 	int k;
-// 	k = *(int *)threadid;
-// 	node myNode(k);
-// 	pthread_exit(NULL);
-// }
 
-// void initialiazeNodes(){
-// 	pthread_t * threads = new pthread_t[N];
-// 	int * args = new int[N];
-// 	for(int i = 0 ; i<N; i++){
-// 		args[i] = i;
-// 	}
-// 	int rc;
-// 	int i;
-// 	for(i = 0 ; i<N;i++){
-// 		int j = i;
-// 		//cout<<"creating thread "<<i<<endl;
-// 		rc = pthread_create(&threads[i],NULL,startNode,(void*)&args[i]);
-// 	}
-// }
 
 void setStaticVariables(){
 	node newNode(N , cloudNodesData);

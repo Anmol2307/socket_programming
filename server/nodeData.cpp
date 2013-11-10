@@ -1,4 +1,9 @@
-#include "nodeData.h"
+
+/* Defining class functions
+ * Class to store the data for every node
+ */
+
+ #include "nodeData.h"
 
 /*
  * Set node variables.

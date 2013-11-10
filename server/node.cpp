@@ -1,3 +1,8 @@
+/* Defining class functions
+ * Class to handle the node functionalities, and store the data for one particular node
+ * And store data corresponding to all nodes
+ */
+
 #include "node.h"
 
 int node::N;
@@ -85,7 +90,7 @@ node::node(){
   		receivedData[recvlen] = 0;
 
 			//Request received is of type ipaddr port requestType(store/get) mf(c-string)
-  		sscanf(receivedData, "%s %d %s %s", ip, &port, requestType, mf);
+  		if (!sscanf(receivedData, "%s %d %s %s", ip, &port, requestType, mf)) continue;
   		printf("[Server] Request Received from %s, port %d of type %s! \n",ip, port, requestType);
 
 			//Check if this request belongs to this server

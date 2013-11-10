@@ -1,3 +1,7 @@
+
+/*
+ * Class to store the data for every node
+ */
 #ifndef NODEDATA_H
 #define NODEDATA_H
 
@@ -5,9 +9,6 @@
 
 using namespace std;
 
-/*
- * Class to store the data for every node
- */
 class nodeData{
 public:
   string ipAddress;      // store IP address of node

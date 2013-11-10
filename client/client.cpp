@@ -1,3 +1,8 @@
+/*
+ * Main Client file
+ * To  Handle interaction between program and user for client functionality
+ */
+
 #include <iostream>
 #include <cstdio>
 #include <string>

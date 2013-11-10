@@ -1,3 +1,9 @@
+
+/*
+ * Class to handle the node functionalities, and store the data for one particular node
+ * And store data corresponding to all nodes
+ */
+
 #ifndef NODE_H
 #define NODE_H
 #include "nodeData.h"
@@ -18,10 +24,6 @@
 using namespace std;
 
 
-/*
- * Class to handle the node functionalities, and store the data for one particular node
- * And store data corresponding to all nodes
- */
 class node{
 private:
 	static int N;                              // Total number of nodes
