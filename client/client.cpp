@@ -90,7 +90,8 @@ void setup_UDP(){
   memset((char *)&myAddr, 0, sizeof(myAddr));
   myAddr.sin_family = AF_INET;
   myAddr.sin_addr.s_addr = inet_addr(myIp.c_str());
-  myAddr.sin_port = htons(myUDPPort);
+  // myAddr.sin_port = htons(myUDPPort);
+  myAddr.sin_port = htons(0);
 
 	//create a socket
   if ((udpSockfd=socket(AF_INET, SOCK_DGRAM, 0)) == -1){
@@ -119,7 +120,8 @@ void setup_TCP(){
   memset((char *)&myAddr, 0, sizeof(myAddr)); 
   myAddr.sin_family = AF_INET;
   myAddr.sin_addr.s_addr = inet_addr(myIp.c_str());
-  myAddr.sin_port = htons(myTCPPort); 
+  // myAddr.sin_port = htons(myTCPPort); 
+  myAddr.sin_port = htons(0); 
   
   //create a socket
   if ((tcpSockfd=socket(AF_INET, SOCK_STREAM, 0)) == -1){
@@ -131,7 +133,13 @@ void setup_TCP(){
   if (bind(tcpSockfd, (struct sockaddr *)&myAddr, sizeof(struct sockaddr)) == -1) {
     printf("[ERROR] Could not bind TCP socket. Exiting!!\n");
     exit(0);
-  } 
+  }
+
+  //get the randomly tcpport of the client.
+  struct sockaddr_in temp;
+  int addrlen = sizeof(temp);
+  getsockname(tcpSockfd, (struct sockaddr *)&temp, (socklen_t *) &addrlen);
+  int myTCPPort = ntohs(temp.sin_port);
 
   printf("[Client] Socket created successfully.\n");
 
@@ -341,13 +349,18 @@ void getRequest(string retrieveFilemf){
  * To  Handle interaction between program and user
  */
 int main(){
-  printf("Enter the number of nodes: ");
-  scanf("%d", &N);
-  printf("Enter the location of config file: ");
-  cin>>configFile;
-  while ( !readNodeData(configFile) ) {
-    cout << "Enter new location of config file: ";
-    cin >> configFile;
+  string line;
+  ifstream myfile ("bin/inputClient");
+  if (myfile.is_open()){
+    getline(myfile, line);
+    sscanf(line.c_str(), "%d\n", &N);
+    getline(myfile, configFile);
+    getline(myfile, myIp);
+    myfile.close();
+  }
+  else{
+    cout<<"Error in inputs!!"<<endl;
+    exit(0);
   }
 
   printf ("[Client] Creating UDP Socket...\n");
