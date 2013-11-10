@@ -27,13 +27,13 @@ do
     	folder=$(echo ${array[1]} | grep -o " .*"|sed "s/^[ ]*//g")
     	mkdir -p "$folder"
     	echo "Running a server on port number "$port
-    	printf "$numNodes\n$nodeID\n$1" > bin/input
+    	printf "$numNodes\n$nodeID\n$1" > bin/input$nodeID
     	# gnome-terminal -e "./bin/run.sh"
-        gnome-terminal -e "bash -c \"./bin/server < bin/input; exec bash\""
+        gnome-terminal -e "bash -c \"./bin/server < bin/input$nodeID; exec bash\""
     fi
     nodeID=$(($nodeID + 1))
 done < "$1"
 
 #remove the temporary file to give inputs
-# rm -f bin/input
+# rm  bin/input*
 # rm -f bin/run.sh

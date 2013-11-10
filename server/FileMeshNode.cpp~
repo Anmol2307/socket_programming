@@ -95,10 +95,13 @@ int main(){
 	scanf("%d", &N);
 	printf("Enter the node id: ");
 	scanf("%d", &nodeId);
+		cout<<"Node id is "<<N<<endl;
 	printf("Enter the configuration file path: ");
 	string configFile;
 	scanf("\n");
 	getline(cin,configFile);
+	cout<<"config file is "<<configFile<<endl;
+	exit(0);
 	while ( !readNodeData(configFile) ) {
     printf("Enter new location of config file: ");
     cin >> configFile;
